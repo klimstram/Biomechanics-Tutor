@@ -32,7 +32,7 @@ if (shinyliveMetaTag !== null) {
   serviceWorkerDir = dirname(currentScriptDir());
 }
 serviceWorkerDir = serviceWorkerDir.replace(/\/$/, "");
-var serviceWorkerPath = serviceWorkerDir + "/shinylive-sw.js";
+var serviceWorkerPath = serviceWorkerDir + "/shinylive-sw.js?v=20260724";
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register(serviceWorkerPath, { type: "module" }).then(() => console.log("Service Worker registered")).catch(() => console.log("Service Worker registration failed"));
   navigator.serviceWorker.ready.then(() => {

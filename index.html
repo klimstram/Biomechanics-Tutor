@@ -3,19 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shiny App</title>
+    <title>Biomechanics Tutor</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="modulepreload" href="./shinylive/load-shinylive-sw.js" />
-    <link rel="modulepreload" href="./shinylive/shinylive.js" />
-    <link rel="preload" href="./app.json" as="fetch" crossorigin="anonymous" />
+    <link rel="modulepreload" href="./shinylive/load-shinylive-sw.js?v=20260724" />
+    <link rel="modulepreload" href="./shinylive/shinylive.js?v=20260724" />
+    <link rel="preload" href="./app.json?v=20260724" as="fetch" crossorigin="anonymous" />
     <link rel="preload" href="./shinylive/style-resets.css" as="style" />
     <link rel="preload" href="./shinylive/shinylive.css" as="style" />
     <script
-      src="./shinylive/load-shinylive-sw.js"
+      src="./shinylive/load-shinylive-sw.js?v=20260724"
       type="module"
     ></script>
     <script type="module">
-      import { runExportedApp } from "./shinylive/shinylive.js";
+      import { runExportedApp } from "./shinylive/shinylive.js?v=20260724";
       runExportedApp({
         id: "root",
         appEngine: "python",
