@@ -2204,7 +2204,19 @@ function asgiToRes(res, body) {
 // src/shinylive-sw.ts
 var useCaching = true;
 var cacheName = "::shinyliveServiceworker";
-var version = "v10";
+var version = "v11";
+var precachePaths = [
+  "/",
+  "/app.json",
+  "/shinylive/load-shinylive-sw.js",
+  "/shinylive/shinylive.js",
+  "/shinylive/style-resets.css",
+  "/shinylive/shinylive.css"
+];
+function resolveServiceWorkerAsset(path) {
+  const basePath = dirname(self.location.pathname).replace(/\/?$/, "/");
+  return new URL(path.replace(/^\//, ""), self.location.origin + basePath).toString();
+}
 function addCoiHeaders(resp) {
   const headers = new Headers(resp.headers);
   headers.set("Cross-Origin-Embedder-Policy", "credentialless");
@@ -2218,7 +2230,26 @@ function addCoiHeaders(resp) {
 }
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    Promise.all([self.skipWaiting(), caches.open(version + cacheName)])
+    Promise.all([
+      self.skipWaiting(),
+      (async () => {
+        const cache = await caches.open(version + cacheName);
+        if (!useCaching) {
+          return;
+        }
+        await Promise.all(
+          precachePaths.map(async (path) => {
+            const url = resolveServiceWorkerAsset(path);
+            try {
+              const response = addCoiHeaders(await fetch(url, { cache: "reload" }));
+              await cache.put(url, response);
+            } catch (error) {
+              console.warn("Failed to precache asset", path, error);
+            }
+          })
+        );
+      })()
+    ])
   );
 });
 self.addEventListener("activate", function(event) {

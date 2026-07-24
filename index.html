@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shiny App</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="modulepreload" href="./shinylive/load-shinylive-sw.js" />
+    <link rel="modulepreload" href="./shinylive/shinylive.js" />
+    <link rel="preload" href="./app.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="./shinylive/style-resets.css" as="style" />
+    <link rel="preload" href="./shinylive/shinylive.css" as="style" />
     <script
       src="./shinylive/load-shinylive-sw.js"
       type="module"
