@@ -2202,9 +2202,9 @@ function asgiToRes(res, body) {
 }
 
 // src/shinylive-sw.ts
-var useCaching = false;
+var useCaching = true;
 var cacheName = "::shinyliveServiceworker";
-var version = "v9";
+var version = "v10";
 function addCoiHeaders(resp) {
   const headers = new Headers(resp.headers);
   headers.set("Cross-Origin-Embedder-Policy", "credentialless");
@@ -2313,7 +2313,7 @@ self.addEventListener("fetch", function(event) {
         try {
           const networkResponse = addCoiHeaders(await fetch(request));
           const baseUrl = self.location.origin + dirname(self.location.pathname);
-          if (request.url.startsWith(baseUrl + "/shinylive/") || request.url === baseUrl + "/favicon.ico") {
+          if (request.url.startsWith(baseUrl + "/shinylive/") || request.url === baseUrl + "/favicon.ico" || request.url === baseUrl + "/app.json" || request.url.startsWith(baseUrl + "/Images/")) {
             const cache = await caches.open(version + cacheName);
             await cache.put(request, networkResponse.clone());
           }
