@@ -119,7 +119,7 @@ landing_page_ui = ui.page_fluid(
     ui.div(
         ui.h1("Welcome to the Biomechanics Tutor", class_="welcome-title"),
         ui.p("Please select a section to begin:", class_="welcome-subtitle"),
-        ui.p("Build refreshed: 2026-07-24", class_="welcome-subtitle"),
+        ui.p("Build refreshed: 2026-07-26 (Mantine + icons)", class_="welcome-subtitle"),
         # **Dynamic Section Buttons**
         ui.div(
             [
