@@ -115,6 +115,43 @@ initial_load = reactive.Value(True)
 is_section_selected = reactive.Value(False)
 show_analytics = reactive.Value(False)
 # **Landing Page UI Component**
+SECTION_ICONS = {
+    "Basic Math": "tabler:calculator",
+    "Calculus": "tabler:math-integral",
+    "Trigonometry": "tabler:triangle",
+    "Linear Kinematics": "tabler:arrows-horizontal",
+    "Force Resolution": "tabler:vector-triangle",
+    "Impulse Momentum": "tabler:ball-bowling",
+    "Friction": "tabler:hand-stop",
+    "Projectile Motion": "tabler:rocket",
+    "Angular Kinematics": "tabler:rotate-clockwise",
+    "General Kinematics": "tabler:run",
+    "Torque/Moment of Force": "tabler:tool",
+    "Moment of Inertia": "tabler:disc",
+    "Static Equilibrium": "tabler:scale",
+    "Dynamic Equilibrium": "tabler:arrows-right-left",
+}
+
+def get_section_icon(section):
+    return SECTION_ICONS.get(str(section).strip(), "tabler:notebook")
+
+def feedback_card(fb):
+    """Inline feedback card (replaces pop-up notifications). fb = {"kind","msg"} or None."""
+    if not fb or not fb.get("msg"):
+        return None
+    palette = {
+        "success": ("#ebfbee", "#2b8a3e", "#2f9e44", "tabler:circle-check"),
+        "warning": ("#fff9db", "#b25e00", "#f08c00", "tabler:alert-triangle"),
+        "error":   ("#fff5f5", "#c92a2a", "#e03131", "tabler:alert-circle"),
+    }
+    bg, fg, accent, icon = palette.get(fb.get("kind", "warning"), palette["warning"])
+    return ui.div(
+        ui.HTML(f'<iconify-icon icon="{icon}" style="font-size:22px;color:{accent};flex:0 0 auto;"></iconify-icon>'),
+        ui.div("", class_="markdown-content feedback-msg", **{"data-markdown": str(fb["msg"])}),
+        class_="feedback-card",
+        style=f"background:{bg};border-left:4px solid {accent};color:{fg};",
+    )
+
 landing_page_ui = ui.page_fluid(
     ui.div(
         ui.h1("Welcome to the Biomechanics Tutor", class_="welcome-title"),
@@ -125,7 +162,7 @@ landing_page_ui = ui.page_fluid(
             [
                 ui.input_action_button(
                     f"section_button_{sanitize_id(section)}",
-                    ui.HTML(f'<iconify-icon icon="tabler:notebook"></iconify-icon><span>{section}</span>'),
+                    ui.HTML(f'<iconify-icon icon="{get_section_icon(section)}"></iconify-icon><span>{section}</span>'),
                     class_="section-button",
                     style=f"background-color: {get_section_color(section, sections)[0]}; color: {get_section_color(section, sections)[1]};"
                 )
@@ -1470,6 +1507,23 @@ body > div, body > div > div {
             border: 1px solid var(--mnt-border) !important;
         }
 
+        /* --- Inline feedback card (replaces pop-up notifications) --- */
+        .feedback-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--mnt-radius);
+            box-shadow: var(--mnt-shadow-sm);
+            margin: 0 0 12px 0;
+            font-size: 1.05em;
+            line-height: 1.5;
+            animation: fbslide .18s ease-out;
+        }
+        .feedback-card .feedback-msg { margin: 0 !important; padding: 0 !important; width: 100%; }
+        .feedback-card .feedback-msg p { margin: 0 !important; }
+        @keyframes fbslide { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
         /* --- Mobile: full-width tap targets, scaled icons --- */
         @media (max-width: 767px) {
             .section-button { width: 100% !important; }
@@ -1602,6 +1656,8 @@ def server(input, output, session):
     feedback_text = reactive.Value("")
     current_answer = reactive.Value(None)
     current_units = reactive.Value("Select units")
+    step_feedback = reactive.Value(None)     # inline feedback under the solution steps
+    answer_feedback = reactive.Value(None)   # inline feedback under the main problem
 
     def reset_state():
         current_subq.set(0)
@@ -1609,6 +1665,8 @@ def server(input, output, session):
         feedback_text.set("")
         current_answer.set(None)
         current_units.set("Select units")
+        step_feedback.set(None)
+        answer_feedback.set(None)
 
     # **Helper Function to Create Observers for Landing Page Section Buttons**
     def create_section_observer(button_id, section):
@@ -1633,12 +1691,7 @@ def server(input, output, session):
                 timestamp = datetime.now().isoformat()
                 log_response(user_id, timestamp, _section, '', '', 'section_selected', _section)
 
-                # Show a notification
-                await show_new_notification(
-                    f"Section '{_section}' selected. Let's begin!",
-                    duration=3,
-                    notif_type="message"
-                )
+                # (Section-start pop-up removed per design; landing straight into the section)
 
     # **Create Observers for All Landing Page Section Buttons**
     for section in sections:
@@ -1713,7 +1766,9 @@ def server(input, output, session):
             body = ui.div(
                 ui.output_ui("question_nav"),
                 ui.output_ui("question_card"),
+                ui.output_ui("answer_feedback_card"),
                 ui.output_ui("main_content"),
+                ui.output_ui("step_feedback_card"),
                 ui.output_ui("solution_card"),
             )
 
@@ -2169,15 +2224,15 @@ def server(input, output, session):
             log_response(user_id, timestamp, current_section(), question_number, step, action, details)
 
             if is_correct and current_subq() < len(sub_questions) - 1:
+                step_feedback.set(None)  # clear; the next step appears
                 current_subq.set(current_subq() + 1)
                 await session.send_custom_message(
                     'render-math', {'selector': f'#subq-{current_subq()}'}
                 )
-                await show_new_notification("Correct! Moving to next step.", duration=3, notif_type="message")
             elif is_correct:
-                await show_new_notification("Correct! Please enter your final answer.", duration=3, notif_type="message")
+                step_feedback.set({"kind": "success", "msg": "Correct! Now enter your final answer below."})
             else:
-                await show_new_notification(feedback_message, duration=5, notif_type="warning")
+                step_feedback.set({"kind": "warning", "msg": str(feedback_message)})
 
     # **Create Observers for All Option Buttons**
     for i in range(20):  # Increased to support up to 20 steps
@@ -2189,7 +2244,7 @@ def server(input, output, session):
     @reactive.event(input.submit_answer)
     async def check_numeric():
         if input.numeric_answer() is None:
-            feedback_text.set("")
+            answer_feedback.set(None)
             return
 
         current_answer.set(input.numeric_answer())
@@ -2224,12 +2279,7 @@ def server(input, output, session):
 
         if numeric_correct and units_correct:
             show_solution.set(True)
-            feedback_text.set("Correct! View the complete solution below.")
-            await show_new_notification(
-                "Correct! You can now view the complete solution.",
-                duration=5,
-                notif_type="message",
-            )
+            answer_feedback.set({"kind": "success", "msg": "Correct! View the complete solution below."})
             await session.send_custom_message('render-math', {'selector': '#solution-content'})
         elif numeric_correct and not units_correct:
             show_solution.set(False)
@@ -2237,22 +2287,21 @@ def server(input, output, session):
                 msg = "Your numeric answer is correct! Please select the appropriate units."
             else:
                 msg = "Your numeric answer is correct, but the units are incorrect. Try again!"
-            feedback_text.set(msg)
-            await show_new_notification(msg, duration=5, notif_type="warning")
+            answer_feedback.set({"kind": "warning", "msg": msg})
         else:
             show_solution.set(False)
-            feedback_text.set("Try again. Your answer is not within the acceptable range.")
-            await show_new_notification(
-                "Try again. Your answer is not within the acceptable range.",
-                duration=5,
-                notif_type="warning",
-            )
+            answer_feedback.set({"kind": "warning", "msg": "Try again. Your answer is not within the acceptable range."})
 
-    # **Feedback Display Output**
+    # **Inline Feedback Card Outputs (replace pop-up notifications)**
     @output
-    @render.text
-    def feedback_display():
-        return feedback_text()
+    @render.ui
+    def answer_feedback_card():
+        return feedback_card(answer_feedback())
+
+    @output
+    @render.ui
+    def step_feedback_card():
+        return feedback_card(step_feedback())
 
     # **Analytics View**
     @output
