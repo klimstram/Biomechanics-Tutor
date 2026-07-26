@@ -174,6 +174,46 @@ app_ui = ui.page_fluid(
                 }
             }
 
+            // Reveal a pre-render card, but wait for ITS OWN images to finish
+            // loading first so text + image appear together (no layout-shift flicker).
+            // Image-less cards reveal instantly. A safety timeout guarantees the card
+            // never stays hidden if an image is slow or broken.
+            function revealCard(card) {
+                if (!card || !card.classList) return;
+                if (card.classList.contains('ready')) return;
+                var imgs = card.querySelectorAll ? card.querySelectorAll('img') : [];
+                var pending = [];
+                for (var i = 0; i < imgs.length; i++) {
+                    var img = imgs[i];
+                    if (!img.complete || img.naturalHeight === 0) {
+                        pending.push(img);
+                    }
+                }
+                if (pending.length === 0) {
+                    card.classList.add('ready');
+                    return;
+                }
+                if (card._revealScheduled) return;
+                card._revealScheduled = true;
+                var remaining = pending.length;
+                var done = false;
+                function finish() {
+                    if (done) return;
+                    done = true;
+                    card.classList.add('ready');
+                }
+                function one() {
+                    remaining -= 1;
+                    if (remaining <= 0) finish();
+                }
+                for (var k = 0; k < pending.length; k++) {
+                    pending[k].addEventListener('load', one, {once: true});
+                    pending[k].addEventListener('error', one, {once: true});
+                }
+                // Safety: never hide the card longer than 1.5s waiting on images
+                setTimeout(finish, 1500);
+            }
+
             // Render a single element the moment it exists in the DOM
             function renderOne(elem) {
                 try {
@@ -194,7 +234,7 @@ app_ui = ui.page_fluid(
                     elem.style.visibility = "visible";
                     // Reveal the containing pre-render card immediately
                     var card = elem.closest ? elem.closest('.card-prerender') : null;
-                    if (card) card.classList.add('ready');
+                    if (card) revealCard(card);
                 } catch (error) {
                     console.error("Error in renderOne:", error);
                 }
@@ -215,7 +255,7 @@ app_ui = ui.page_fluid(
                     elem.removeAttribute('data-rendered');
                     renderOne(elem);
                 });
-                card.classList.add('ready');
+                revealCard(card);
             }
 
             // Watch the DOM and render new content the instant Shiny inserts it.
@@ -233,10 +273,10 @@ app_ui = ui.page_fluid(
                         if (node.querySelectorAll) {
                             node.querySelectorAll('[data-markdown]').forEach(renderOne);
                             if (node.classList && node.classList.contains('card-prerender')) {
-                                node.classList.add('ready');
+                                revealCard(node);
                             }
                             node.querySelectorAll('.card-prerender').forEach(function(c) {
-                                c.classList.add('ready');
+                                revealCard(c);
                             });
                         }
                     }
@@ -248,7 +288,7 @@ app_ui = ui.page_fluid(
                     _mdObserver.observe(document.body, {childList: true, subtree: true});
                     // Render anything already present
                     document.querySelectorAll('[data-markdown]').forEach(renderOne);
-                    document.querySelectorAll('.card-prerender').forEach(function(c){ c.classList.add('ready'); });
+                    document.querySelectorAll('.card-prerender').forEach(function(c){ revealCard(c); });
                 } else {
                     setTimeout(_startMdObserver, 20);
                 }
