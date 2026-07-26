@@ -125,7 +125,7 @@ landing_page_ui = ui.page_fluid(
             [
                 ui.input_action_button(
                     f"section_button_{sanitize_id(section)}",
-                    section,
+                    ui.HTML(f'<iconify-icon icon="tabler:notebook"></iconify-icon><span>{section}</span>'),
                     class_="section-button",
                     style=f"background-color: {get_section_color(section, sections)[0]}; color: {get_section_color(section, sections)[1]};"
                 )
@@ -155,6 +155,10 @@ app_ui = ui.page_fluid(
         ui.tags.script(
             src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"
         ),
+        ui.tags.script(
+            src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"
+        ),
+
         ui.tags.script(
             # Minimal functional change: second pass ensures markdown-only (no KaTeX) renders
             r"""
@@ -1342,7 +1346,144 @@ body > div, body > div > div {
 }
 """
     ),
-)
+        ui.tags.style(r"""
+        /* ===================================================================
+           MANTINE-INSPIRED THEME LAYER (blue accent, light) + Iconify
+           Appended last so it overrides earlier rules. Scoped to
+           buttons / cards / inputs / pills / notifications only.
+           =================================================================== */
+        :root {
+            --mnt-blue: #228be6;
+            --mnt-blue-hover: #1c7ed6;
+            --mnt-blue-light: #e7f5ff;
+            --mnt-radius: 8px;
+            --mnt-border: #dee2e6;
+            --mnt-text: #212529;
+            --mnt-dimmed: #868e96;
+            --mnt-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --mnt-shadow-sm: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.06);
+            --mnt-shadow-md: 0 1px 3px rgba(0,0,0,.05), 0 10px 15px -5px rgba(0,0,0,.05), 0 7px 7px -5px rgba(0,0,0,.04);
+        }
+
+        body, .tutor-title, .question-title, .question-title2,
+        .markdown-content, .markdown-base, .solution-markdown-content,
+        button, input, select, .form-control, .selectize-input {
+            font-family: var(--mnt-font) !important;
+        }
+        body { color: var(--mnt-text); }
+
+        /* Iconify baseline alignment */
+        iconify-icon { display: inline-block; vertical-align: -0.14em; line-height: 1; }
+
+        /* --- Paper / cards (Mantine Paper) --- */
+        .card, .step-card {
+            border: 1px solid var(--mnt-border) !important;
+            border-radius: var(--mnt-radius) !important;
+            box-shadow: var(--mnt-shadow-sm) !important;
+        }
+        .card:hover { box-shadow: var(--mnt-shadow-md) !important; }
+
+        /* --- Primary / Submit button (Mantine filled) --- */
+        .btn-primary {
+            background-color: var(--mnt-blue) !important;
+            border: 1px solid var(--mnt-blue) !important;
+            color: #fff !important;
+            border-radius: var(--mnt-radius) !important;
+            font-weight: 600 !important;
+            text-transform: none !important;
+            letter-spacing: normal !important;
+            box-shadow: none !important;
+            transition: background-color .15s ease, transform .05s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+        }
+        .btn-primary:hover {
+            background-color: var(--mnt-blue-hover) !important;
+            border-color: var(--mnt-blue-hover) !important;
+            color: #fff !important;
+        }
+        .btn-primary:active { transform: translateY(1px); }
+        .btn-primary iconify-icon { font-size: 18px; }
+
+        /* --- Inputs (Mantine TextInput / Select) --- */
+        input[type="number"], .form-control, .selectize-input,
+        select, select.form-select {
+            border: 1px solid var(--mnt-border) !important;
+            border-radius: var(--mnt-radius) !important;
+            transition: border-color .1s ease, box-shadow .1s ease !important;
+        }
+        input[type="number"]:focus, .form-control:focus,
+        .selectize-input.focus, select:focus {
+            border-color: var(--mnt-blue) !important;
+            box-shadow: 0 0 0 1px var(--mnt-blue) !important;
+            outline: none !important;
+        }
+
+        /* --- Step pills (Mantine SegmentedControl / pill) --- */
+        .question_steps .nav-pills .nav-link {
+            border-radius: var(--mnt-radius) !important;
+            font-weight: 600 !important;
+            transition: all .15s ease !important;
+        }
+
+        /* --- Section buttons: keep per-section colour, add Mantine polish + icon --- */
+        .section-button {
+            border-radius: var(--mnt-radius) !important;
+            font-weight: 600 !important;
+            border: none !important;
+            box-shadow: var(--mnt-shadow-sm) !important;
+            transition: transform .1s ease, box-shadow .15s ease, filter .15s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            text-transform: none !important;
+        }
+        .section-button:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--mnt-shadow-md) !important;
+            filter: brightness(1.04);
+        }
+        .section-button iconify-icon { font-size: 20px; opacity: .9; }
+
+        /* --- Header / footer text buttons (Mantine subtle) --- */
+        .header-main-menu-btn, .footer-btn {
+            border-radius: var(--mnt-radius) !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            transition: background-color .12s ease !important;
+        }
+        .header-main-menu-btn:hover, .footer-btn:hover {
+            background-color: var(--mnt-blue-light) !important;
+        }
+        .header-main-menu-btn iconify-icon,
+        .footer-btn iconify-icon { font-size: 18px; }
+
+        /* --- Notifications (Mantine Notification) --- */
+        .shiny-notification {
+            border-radius: var(--mnt-radius) !important;
+            box-shadow: var(--mnt-shadow-md) !important;
+            border: 1px solid var(--mnt-border) !important;
+        }
+
+        /* --- Mobile: full-width tap targets, scaled icons --- */
+        @media (max-width: 767px) {
+            .section-button { width: 100% !important; }
+            .section-button iconify-icon { font-size: 18px; }
+            .btn-primary {
+                width: 100% !important;
+                justify-content: center !important;
+                padding: 12px 16px !important;
+                height: auto !important;
+            }
+            .header-main-menu-btn, .footer-btn { justify-content: flex-start !important; }
+        }
+        """),
+    )
 
 )
 
@@ -1537,12 +1678,12 @@ def server(input, output, session):
                 ui.div(
                     ui.input_action_button(
                         "back_to_menu",
-                        "Main Menu",
+                        ui.HTML('<iconify-icon icon="tabler:home"></iconify-icon><span>Main Menu</span>'),
                         class_="btn btn-link header-main-menu-btn"
                     ),
                     ui.input_action_button(
                         "analytics_button",
-                        "My Performance",
+                        ui.HTML('<iconify-icon icon="tabler:chart-bar"></iconify-icon><span>My Performance</span>'),
                         class_="btn btn-link header-main-menu-btn"
                     ),
                     class_="header-buttons",
@@ -1555,7 +1696,7 @@ def server(input, output, session):
 
         # Footer with data buttons
         footer = ui.div(
-            ui.download_button("download_my_session", "Download My Session Data", class_="btn btn-link footer-btn"),
+            ui.download_button("download_my_session", ui.HTML('<iconify-icon icon="tabler:download"></iconify-icon><span>Download My Session Data</span>'), class_="btn btn-link footer-btn"),
             class_="tutor-footer",
             style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; margin: 0; padding-left: 16px; padding-right: 16px; z-index: 100;" if show_analytics() else None
         )
@@ -1687,7 +1828,7 @@ def server(input, output, session):
                 ui.output_text("combined_answer"),
                 ui.input_action_button(
                     "submit_answer",
-                    "Submit",
+                    ui.HTML('<iconify-icon icon="tabler:circle-check"></iconify-icon><span>Submit</span>'),
                     class_="btn-primary"
                 ),
                 style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;",
