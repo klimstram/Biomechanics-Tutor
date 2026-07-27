@@ -162,7 +162,7 @@ landing_page_ui = ui.page_fluid(
             [
                 ui.input_action_button(
                     f"section_button_{sanitize_id(section)}",
-                    ui.HTML(f'<iconify-icon icon="{get_section_icon(section)}"></iconify-icon><span>{section}</span>'),
+                    section,
                     class_="section-button",
                     style=f"background-color: {get_section_color(section, sections)[0]}; color: {get_section_color(section, sections)[1]};"
                 )
@@ -194,6 +194,32 @@ app_ui = ui.page_fluid(
         ),
         ui.tags.script(
             src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"
+        ),
+        ui.tags.script(
+            r"""
+            // When a solution-step pill is clicked, shift the step card up so its
+            // content sits fully between the fixed header and the fixed bottom banner.
+            (function () {
+                function scrollStepIntoView() {
+                    var card = document.getElementById('main_content_outer');
+                    if (!card) return;
+                    var header = document.querySelector('.tutor-header');
+                    var hH = header ? header.offsetHeight : 65;
+                    var rect = card.getBoundingClientRect();
+                    var target = window.pageYOffset + rect.top - hH - 12;
+                    if (target < 0) target = 0;
+                    window.scrollTo({ top: target, behavior: 'smooth' });
+                }
+                document.addEventListener('click', function (e) {
+                    var t = e.target;
+                    if (!t || !t.closest) return;
+                    var pill = t.closest('.question_steps .nav-link, #question_steps .nav-link, .question_steps .nav-pills a');
+                    if (!pill) return;
+                    // wait for the tab content to switch, then bring the card into view
+                    setTimeout(scrollStepIntoView, 90);
+                });
+            })();
+            """
         ),
 
         ui.tags.script(
@@ -682,7 +708,7 @@ app_ui = ui.page_fluid(
         /* Add padding for fixed header and footer */
         body, .bslib-page-fluid, .page-fluid {
             padding-top: 65px !important;
-            padding-bottom: 60px !important;
+            padding-bottom: 80px !important;
         }
         
         #main-wrapper {
@@ -1731,12 +1757,12 @@ def server(input, output, session):
                 ui.div(
                     ui.input_action_button(
                         "back_to_menu",
-                        ui.HTML('<iconify-icon icon="tabler:home"></iconify-icon><span>Main Menu</span>'),
+                        "Main Menu",
                         class_="btn btn-link header-main-menu-btn"
                     ),
                     ui.input_action_button(
                         "analytics_button",
-                        ui.HTML('<iconify-icon icon="tabler:chart-bar"></iconify-icon><span>My Performance</span>'),
+                        "My Performance",
                         class_="btn btn-link header-main-menu-btn"
                     ),
                     class_="header-buttons",
