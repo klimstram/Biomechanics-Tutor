@@ -219,6 +219,44 @@ app_ui = ui.page_fluid(
                     setTimeout(scrollStepIntoView, 90);
                 });
             })();
+
+            // When the solution-step feedback card appears, shift the page up so the
+            // whole card is visible above the fixed bottom banner.
+            (function () {
+                function revealFeedback(card) {
+                    var footer = document.querySelector('.tutor-footer');
+                    var fH = footer ? footer.offsetHeight : 60;
+                    var header = document.querySelector('.tutor-header');
+                    var hH = header ? header.offsetHeight : 65;
+                    var rect = card.getBoundingClientRect();
+                    var viewBottom = window.innerHeight - fH - 12;
+                    if (rect.bottom > viewBottom) {
+                        window.scrollTo({ top: window.pageYOffset + (rect.bottom - viewBottom), behavior: 'smooth' });
+                    } else if (rect.top < hH + 12) {
+                        window.scrollTo({ top: window.pageYOffset + rect.top - hH - 12, behavior: 'smooth' });
+                    }
+                }
+                var obs = new MutationObserver(function (muts) {
+                    for (var i = 0; i < muts.length; i++) {
+                        var nodes = muts[i].addedNodes;
+                        for (var j = 0; j < nodes.length; j++) {
+                            var n = nodes[j];
+                            if (!n || n.nodeType !== 1) continue;
+                            var card = null;
+                            if (n.classList && n.classList.contains('feedback-card')) card = n;
+                            else if (n.querySelector) card = n.querySelector('.feedback-card');
+                            if (card && card.closest && card.closest('#step_feedback_card')) {
+                                (function (c) { setTimeout(function () { revealFeedback(c); }, 70); })(card);
+                            }
+                        }
+                    }
+                });
+                function start() {
+                    if (document.body) obs.observe(document.body, { childList: true, subtree: true });
+                    else setTimeout(start, 20);
+                }
+                start();
+            })();
             """
         ),
 
