@@ -218,6 +218,12 @@ app_ui = ui.page_fluid(
                     // wait for the tab content to switch, then bring the card into view
                     setTimeout(scrollStepIntoView, 90);
                 });
+                // Server triggers this after auto-advancing to the next step
+                if (window.Shiny && Shiny.addCustomMessageHandler) {
+                    Shiny.addCustomMessageHandler('scroll-step', function () {
+                        setTimeout(function () { requestAnimationFrame(scrollStepIntoView); }, 180);
+                    });
+                }
             })();
 
             // When the solution-step feedback card appears, shift the page up so the
@@ -2293,6 +2299,8 @@ def server(input, output, session):
                 await session.send_custom_message(
                     'render-math', {'selector': f'#subq-{current_subq()}'}
                 )
+                # Realign the view so the new step card is shown
+                await session.send_custom_message('scroll-step', {})
             elif is_correct:
                 step_feedback.set({"kind": "success", "msg": "Correct! Now enter your final answer below."})
             else:
